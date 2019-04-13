@@ -2,8 +2,26 @@ syntax="proto3";
 
 package JarvisMessage;
 
-message login_in
+message Login
 {
     string username = 1;
     string password = 2;
+}
+
+message LoginResult
+{
+    bool result = 1;
+}
+
+message Logon
+{
+    string username = 1;
+    string password = 2;
+}
+
+message Message
+{
+    bool if_relay = 1;
+    repeated string relay_name = 2;
+    string message = 3;
 }

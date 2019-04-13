@@ -5,34 +5,82 @@ import (
 	"github.com/golang/protobuf/proto"
 	"JarvisMessage"
 	// "os"
+	"io"
 	"net"
 )
 
-// func verifyLogin(recive_msg ) {
+func returnResult(conn net.Conn, result bool) {
+	result_msg := &JarvisMessage.LoginResult{
+		Result: true,
+	}
 
-// }
+	return_msg,_ := proto.Marshal(result_msg)
+	conn.Write([]byte(return_msg))
+}
+
+func verifyLogin(conn net.Conn) bool {
+	for i := 0; i < 3; i++{
+		buf := make([]byte, 1024)
+		size, err := conn.Read(buf)
+	
+		if err != nil {
+			fmt.Println("read data failed...")
+			continue
+		}
+	
+		msg_buf := buf[0:size]
+	
+		recive_msg := &JarvisMessage.Login{}
+	
+		err = proto.Unmarshal(msg_buf, recive_msg)
+	
+		if err != nil {
+			fmt.Println("unmarshaling error: ", recive_msg)
+			continue
+		}
+		
+		if recive_msg.Username == "中国移动" && recive_msg.Password == "1008611" {
+			return true
+		}
+	}
+
+	return false
+}
 
 func handleConn(conn net.Conn) {
 	defer conn.Close()
+
+	// login verify
+	verify_result := verifyLogin(conn)
+	returnResult(conn, verify_result)
+	if verify_result == false {
+		conn.Close()
+		return
+	}
+
+	// revive msg
 	for {
 		buf := make([]byte, 1024)
 		size, err := conn.Read(buf)
 	
 		if err != nil {
 			fmt.Println("read data failed...")
+			if err == io.EOF {
+				fmt.Println("client closed!")
+				return
+			}
 		}
 	
 		msg_buf := buf[0:size]
 	
-		recive_msg := &JarvisMessage.LoginIn{}
+		recive_msg := &JarvisMessage.Message{}
 	
 		err = proto.Unmarshal(msg_buf, recive_msg)
 	
 		if err != nil {
 			// fmt.Println("unmarshaling error: ", recive_msg)
 		}
-		fmt.Println("recive: ", recive_msg)
-		fmt.Println("username: ", recive_msg.Username)
+		fmt.Println("I recive: ", recive_msg.Message)
 	}
 }
 
